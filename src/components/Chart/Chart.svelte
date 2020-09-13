@@ -1,51 +1,64 @@
 <script lang="ts">
-  import { line } from "d3-shape";
-  import { extent, max, maxIndex } from "d3-array";
-  import { scaleLinear, scaleUtc } from "d3-scale";
-  import { movingAverageByJurisdiction, niceDate } from "../../utils";
-  import { milestones } from "../../constants";
-  import { Jurisdiction, RawVictoriaLGAData, DataRow } from "../../global.d";
-  import * as dayjs from "dayjs";
+  import { line } from 'd3-shape';
+  import { max, maxIndex } from 'd3-array';
+  import { scaleLinear, scaleUtc } from 'd3-scale';
+  import { niceDate } from '../../utils';
+  import { milestones, Milestone } from '../../constants';
+  import { Region, DataRow, Victoria14DayRow } from '../../global.d';
+  import * as dayjs from 'dayjs';
 
-  export let data: RawVictoriaLGAData;
-  export let jurisdiction: Jurisdiction = "metro";
+  export let data: Victoria14DayRow[];
+  export let region: Region = 'metro';
 
-  let series: { metro: DataRow[]; regional: DataRow[]; state: DataRow[] };
+  const isMilestone = (obj: unknown) => {
+    if (typeof obj === 'object') {
+      const { date, colour, targetColour, value } = obj;
+      if (
+        date instanceof Date &&
+        typeof colour === 'string' &&
+        typeof targetColour === 'string' &&
+        typeof value === 'number'
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   let chartSeries: DataRow[];
   let chartData: DataRow[];
   let peak: DataRow;
   let last: DataRow;
 
-  let height = 350;
+  let height = 250;
   let width = 360;
 
-  const now = dayjs();
-  const xDomain = [now.subtract(20, "day").toDate(), new Date(2020, 9, 30)];
-  const xTicks = [
-    { value: now.subtract(20, "day").toDate(), label: "20 days" },
-    { value: now.subtract(7, "day").toDate(), label: "7 days" },
+  $: chartSeries = data.map(d => ({
+    date: dayjs(d.date).toDate(),
+    value: d[region]
+  }));
+
+  $: now = dayjs(chartSeries[chartSeries.length - 1].date);
+  $: xDomain = [now.subtract(20, 'day').toDate(), new Date(2020, 9, 30)];
+  $: xTicks = [
+    { value: now.subtract(20, 'day').toDate(), label: '20 days' },
+    { value: now.subtract(7, 'day').toDate(), label: '7 days' }
   ];
   const yTicks = [0, 100, 200];
   const margin = {
-    bottom: 100,
+    bottom: 60,
     top: 10,
     left: 25,
-    right: 15,
+    right: 15
   };
 
-  $: series = {
-    metro: movingAverageByJurisdiction(data, 14, "metro"),
-    regional: movingAverageByJurisdiction(data, 14, "regional"),
-    state: movingAverageByJurisdiction(data, 14, "state"),
-  };
-  $: console.table(series.metro);
-  $: chartSeries = series[jurisdiction];
   $: chartData = chartSeries.slice(-25);
-
+  $: console.log('chartData :>> ', chartData);
   $: yScale =
     chartData &&
     scaleLinear()
-      .domain([0, max<DataRow, number>(chartData, (d) => d.value) + 20])
+      .domain([0, max<DataRow, number>(chartData, d => d.value) + 25])
       .nice()
       .range([height - margin.bottom, margin.top]);
 
@@ -54,11 +67,10 @@
     .range([margin.left, width - margin.right]);
 
   $: linePath = line<{ date: Date; value: number }>()
-    .x((d) => xScale(d.date))
-    .y((d) => yScale(d.value));
+    .x(d => xScale(d.date))
+    .y(d => yScale(d.value));
 
-  $: peak =
-    chartSeries && chartSeries[maxIndex<DataRow>(chartSeries, (d) => d.value)];
+  $: peak = chartSeries && chartSeries[maxIndex<DataRow>(chartSeries, d => d.value)];
 
   $: last = chartSeries && chartSeries[chartSeries.length - 1];
 </script>
@@ -179,11 +191,7 @@
     <g class="axis x-axis">
       {#each xTicks as tick}
         <g class="tick tick-{tick}">
-          <line
-            y1={yScale(0) + 5}
-            y2={yScale(0)}
-            x1={xScale(tick.value)}
-            x2={xScale(tick.value)} />
+          <line y1={yScale(0) + 5} y2={yScale(0)} x1={xScale(tick.value)} x2={xScale(tick.value)} />
           <text y={yScale(0) + 20} x={xScale(tick.value)} text-anchor="middle">
             <tspan x={xScale(tick.value)}>{tick.label}</tspan>
             <tspan x={xScale(tick.value)} dy="1.1em">ago</tspan>
@@ -201,15 +209,8 @@
       y1={yScale(last.value * 1.8)}
       y2={yScale(0) + 5} />
 
-    {#if jurisdiction === 'metro'}
-      {#each milestones.metro as milestone}
-        <circle
-          fill="none"
-          stroke={milestone.targetColour || '#000'}
-          stroke-width="2"
-          r={3.5}
-          cx={xScale(milestone.date)}
-          cy={yScale(milestone.value)} />
+    {#each milestones[region] as milestone}
+      {#if isMilestone(milestone) && milestone.date}
         <line
           x1={xScale(milestone.date)}
           x2={xScale(milestone.date)}
@@ -224,36 +225,44 @@
           y2={yScale(milestone.value)}
           stroke={milestone.colour || '#000'}
           stroke-dasharray="2 2" />
-        <text
-          class="tick milestone"
-          style={`fill:${milestone.colour || '#000'};`}
-          y={yScale(milestone.value) + 4}
-          x={margin.left - 3}
-          text-anchor="end">
-          {milestone.value}
-        </text>
+        <circle
+          fill="none"
+          stroke={milestone.targetColour || '#000'}
+          stroke-width="2"
+          r={3.5}
+          cx={xScale(milestone.date)}
+          cy={yScale(milestone.value)} />
         <text
           class="x-tick-label milestone"
           style={`fill:${milestone.colour || '#000'};`}
           y={yScale(0) + 20}
           x={xScale(milestone.date)}
           text-anchor="middle">
-          <tspan class="value" x={xScale(milestone.date)}>
-            {niceDate(milestone.date)}
-          </tspan>
-          <tspan x={xScale(milestone.date)} dy="1.1em">
-            &lt; ${milestone.value} cases
-          </tspan>
+          <tspan class="value" x={xScale(milestone.date)}>{niceDate(milestone.date)}</tspan>
+          <tspan x={xScale(milestone.date)} dy="1.1em">&lt; {milestone.value} cases</tspan>
           <tspan x={xScale(milestone.date)} dy="1.1em">per day</tspan>
         </text>
-      {/each}
-    {/if}
+      {:else}
+        <line
+          x1={xScale(xDomain[1])}
+          x2={xScale(xDomain[0])}
+          y1={yScale(milestone.value)}
+          y2={yScale(milestone.value)}
+          stroke={milestone.colour || '#000'}
+          stroke-dasharray="2 2" />
+      {/if}
+      <text
+        class="tick milestone"
+        style={`fill:${milestone.colour || '#000'};`}
+        y={yScale(milestone.value) + 4}
+        x={margin.left - 3}
+        text-anchor="end">
+        {milestone.value}
+      </text>
+    {/each}
   </svg>
-  <span class="label peak-label">Peak was {niceDate(peak.date)} at {peak.value.toFixed(1)}
-    new cases</span>
-  <span
-    class="now-label"
-    style={`top: ${yScale(last.value * 1.8) - 10}px; left: ${xScale(last.date)}px`}>
+  <span class="label peak-label">Peak was {niceDate(peak.date)} at {peak.value.toFixed(1)} new cases</span>
+  <span class="now-label" style={`top: ${yScale(last.value * 1.8) - 10}px; left: ${xScale(last.date)}px`}>
     <strong>Latest:</strong>
     <strong>{last.value.toFixed(1)}</strong> new cases avg. over 14 days
   </span>
