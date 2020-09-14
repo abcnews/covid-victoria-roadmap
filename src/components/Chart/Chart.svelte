@@ -5,47 +5,20 @@
   import { niceDate } from '../../utils';
   import { milestones, Milestone } from '../../constants';
   import { Region, DataRow, Victoria14DayRow } from '../../global.d';
-  import * as dayjs from 'dayjs';
+  import dayjs from 'dayjs';
 
-  export let data: Victoria14DayRow[];
+  export let data: Victoria14DayRow[] = [];
   export let region: Region = 'metro';
-
-  const isMilestone = (obj: unknown) => {
-    if (typeof obj === 'object') {
-      const { date, colour, targetColour, value } = obj;
-      if (
-        date instanceof Date &&
-        typeof colour === 'string' &&
-        typeof targetColour === 'string' &&
-        typeof value === 'number'
-      ) {
-        return true;
-      }
-    }
-
-    return false;
-  };
 
   let chartSeries: DataRow[];
   let chartData: DataRow[];
   let peak: DataRow;
   let last: DataRow;
 
+  let windowWidth = 360;
   let height = 250;
-  let width = 360;
+  $: width = windowWidth - 40;
 
-  $: chartSeries = data.map(d => ({
-    date: dayjs(d.date).toDate(),
-    value: d[region]
-  }));
-
-  $: now = dayjs(chartSeries[chartSeries.length - 1].date);
-  $: xDomain = [now.subtract(20, 'day').toDate(), new Date(2020, 9, 30)];
-  $: xTicks = [
-    { value: now.subtract(20, 'day').toDate(), label: '20 days' },
-    { value: now.subtract(7, 'day').toDate(), label: '7 days' }
-  ];
-  const yTicks = [0, 100, 200];
   const margin = {
     bottom: 60,
     top: 10,
@@ -53,26 +26,34 @@
     right: 15
   };
 
-  $: chartData = chartSeries.slice(-25);
-  $: console.log('chartData :>> ', chartData);
-  $: yScale =
-    chartData &&
-    scaleLinear()
-      .domain([0, max<DataRow, number>(chartData, d => d.value) + 25])
-      .nice()
-      .range([height - margin.bottom, margin.top]);
+  $: chartSeries = data.map(d => ({
+    date: dayjs(d.date).toDate(),
+    value: d[region]
+  }));
 
-  $: xScale = scaleUtc()
-    .domain(xDomain)
-    .range([margin.left, width - margin.right]);
+  $: chartData = chartSeries.slice(-25);
+  $: peak = chartSeries && chartSeries[maxIndex<DataRow>(chartSeries, d => d.value)];
+  $: last = chartSeries && chartSeries[chartSeries.length - 1];
+  $: now = dayjs(last.date);
+
+  // x-axis
+  $: xDomain = [now.subtract(20, 'day').toDate(), new Date(2020, 9, 30)];
+  $: xRange = [margin.left, width - margin.right];
+  $: xTicks = [
+    { value: now.subtract(20, 'day').toDate(), label: '20 days' },
+    { value: now.subtract(7, 'day').toDate(), label: '7 days' }
+  ];
+  $: xScale = scaleUtc().domain(xDomain).range(xRange);
+
+  // y-axis
+  $: yDomain = [0, (max<DataRow, number>(chartData || [], d => d.value) || 0) * 1.25];
+  $: yRange = [height - margin.bottom, margin.top];
+  $: yTicks = [0, 100, 200];
+  $: yScale = scaleLinear().domain(yDomain).range(yRange);
 
   $: linePath = line<{ date: Date; value: number }>()
     .x(d => xScale(d.date))
     .y(d => yScale(d.value));
-
-  $: peak = chartSeries && chartSeries[maxIndex<DataRow>(chartSeries, d => d.value)];
-
-  $: last = chartSeries && chartSeries[chartSeries.length - 1];
 </script>
 
 <style lang="scss">
@@ -102,10 +83,11 @@
     max-width: 8em;
     text-align: center;
     transform: translate(-50%, -100%);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: bold;
     > strong {
       line-height: 0.8;
+      font-size: 0.6875rem;
       color: #000;
       text-transform: uppercase;
       font-weight: bold;
@@ -113,7 +95,8 @@
     :nth-child(2) {
       font-size: 3em;
       display: block;
-      margin-bottom: 0.3em;
+      margin-bottom: 0.1em;
+      font-weight: 800;
     }
   }
 
@@ -175,7 +158,8 @@
   }
 </style>
 
-<div class="container" bind:clientWidth={width}>
+<svelte:window bind:innerWidth={windowWidth} />
+<div class="container">
   <svg {width} {height}>
     <!-- y axis -->
     <g class="axis y-axis">
@@ -200,7 +184,7 @@
       {/each}
     </g>
 
-    <path d={linePath(chartData)} stroke-dasharray="3 3 3 3 3 3 8 3 8 3 500" />
+    <path d={linePath(chartData)} stroke-dasharray="3 3 3 3 3 3 8 3 8 3 1000" />
     <circle r="2" cx={xScale(last.date)} cy={yScale(last.value)} />
     <line
       stroke="#000"
@@ -210,7 +194,7 @@
       y2={yScale(0) + 5} />
 
     {#each milestones[region] as milestone}
-      {#if isMilestone(milestone) && milestone.date}
+      {#if milestone.date}
         <line
           x1={xScale(milestone.date)}
           x2={xScale(milestone.date)}

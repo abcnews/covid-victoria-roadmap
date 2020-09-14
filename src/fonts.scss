@@ -25,6 +25,13 @@ $url-font-serif: '#{$url-fonts-root}abcserif/abcserif';
 }
 
 @font-face {
+  font-family: 'ABCSans';
+  font-weight: 800;
+  font-style: normal;
+  src: url('#{$url-font-sans}-black.woff2') format('woff2'), url('#{$url-font-sans}-black.woff') format('woff');
+}
+
+@font-face {
   font-family: 'ABCSerif';
   font-weight: normal;
   font-style: normal;

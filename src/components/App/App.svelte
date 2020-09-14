@@ -1,31 +1,33 @@
 <script lang="ts">
-  import { csvParse } from "d3-dsv";
-  import { RawVictora14DayRow } from "../../global.d";
-  import { historicData } from "../../constants";
-  import Chart from "../Chart/Chart.svelte";
-  import { toDate } from "../../utils";
-  import * as dayjs from "dayjs";
-  export let projectName: string;
+  import { csvParse } from 'd3-dsv';
+  import { RawVictora14DayRow } from '../../global.d';
+  import { historicData } from '../../constants';
+  import Chart from '../Chart/Chart.svelte';
+  import { toDate } from '../../utils';
+  import dayjs from 'dayjs';
 
-  let region: "metro" | "regional" = "metro";
+  let height: number = 300;
+
+  $: setTimeout(() => window.parent.postMessage({ sentinel: 'amp', type: 'embed-size', height }, '*'), 0);
+  let region: 'metro' | 'regional' = 'metro';
 
   const DATA_URL =
-    "https://covid-sheets-mirror.web.app/api?sheet=1nUUU5zPRPlhAXM_-8R7lsMnAkK4jaebvIL5agAaKoXk&range=Vic%2014%20day%20average!A:C";
+    'https://covid-sheets-mirror.web.app/api?sheet=1nUUU5zPRPlhAXM_-8R7lsMnAkK4jaebvIL5agAaKoXk&range=Vic%2014%20day%20average!A:C';
 
   const dataPromise = fetch(DATA_URL)
-    .then((res) => res.text())
-    .then((txt) => csvParse<RawVictora14DayRow>(txt, null))
-    .then((data) =>
+    .then(res => res.text())
+    .then(txt => csvParse<RawVictora14DayRow>(txt, null))
+    .then(data =>
       data
-        .map((d) => ({
+        .map(d => ({
           date: toDate(d.Date),
-          regional: +d["Regional Average"],
-          metro: +d["Metro Average"],
+          regional: +d['Regional Average'],
+          metro: +d['Metro Average']
         }))
         .concat(
-          historicData.map((d) => ({
+          historicData.map(d => ({
             ...d,
-            date: dayjs(d.date, "YYYY-MM-DD").toDate(),
+            date: dayjs(d.date, 'YYYY-MM-DD').toDate()
           }))
         )
         .sort((a, b) => +a.date - +b.date)
@@ -33,6 +35,12 @@
 </script>
 
 <style lang="scss">
+  :global(body, html) {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
   .container {
     background-color: #e3ebed;
     padding: 20px;
@@ -67,7 +75,7 @@
     position: relative;
     overflow: visible;
     &:before {
-      content: "";
+      content: '';
       background-color: #01cfff;
       position: absolute;
       bottom: 100%;
@@ -86,22 +94,25 @@
   }
 </style>
 
-<div class="container">
+<div class="container" bind:clientHeight={height}>
   <h2 class="title">How is Victoria tracking to get out of lockdown?</h2>
-  <p>
-    The Victorian Government has pinned its relaxation of lockdown to the 14 day
-    average of new COVID-19 cases getting below certain levels. Premier Dan
-    Andrews says that if this rate goes down faster than expected they will
-    adjust the time frame.
-  </p>
   <div class="tabs">
-    <button
-      class="tab {region === 'metro' ? 'active' : ''}"
-      on:click={() => (region = 'metro')}>Vic. metro</button>
-    <button
-      class="tab {region === 'regional' ? 'active' : ''}"
-      on:click={() => (region = 'regional')}>Vic. regional</button>
+    <button class="tab {region === 'metro' ? 'active' : ''}" on:click={() => (region = 'metro')}>Vic. metro</button>
+    <button class="tab {region === 'regional' ? 'active' : ''}" on:click={() => (region = 'regional')}>Vic. regional</button>
   </div>
+
+  {#if region === 'metro'}
+    <p>
+      The next step on <strong>Melbourne's</strong> roadmap to easing restrictions will happen <strong>after September
+        28</strong>, if the 14-day average is <strong>between 30 and 50</strong>.
+    </p>
+  {:else}
+    <p>
+      The next step on <strong>regional Victoria's</strong> roadmap to easing restrictions will happen when the 14-day average
+      of new cases is <strong>below 5</strong> and there were <strong>no new cases with an unknown source</strong>.
+    </p>
+  {/if}
+
   {#await dataPromise}
     <p>Loading...</p>
   {:then data}
@@ -109,9 +120,8 @@
   {/await}
   <div class="notes">
     <p>
-      Caveat info info info sources etc. Chamomile is known worldwide to be a
-      calming sleep aid, a remedy to ease an upset stomach, and for its
-      wonderful .
+      Caveat info info info sources etc. Chamomile is known worldwide to be a calming sleep aid, a remedy to ease an
+      upset stomach, and for its wonderful .
     </p>
   </div>
 </div>
