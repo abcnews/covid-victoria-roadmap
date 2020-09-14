@@ -3,7 +3,7 @@
   import { RawVictora14DayRow } from '../../global.d';
   import { historicData } from '../../constants';
   import Chart from '../Chart/Chart.svelte';
-  import { toDate } from '../../utils';
+  import { promiseSpy, toDate } from '../../utils';
   import dayjs from 'dayjs';
 
   let height: number = 300;
@@ -24,12 +24,6 @@
           regional: +d['Regional Average'],
           metro: +d['Metro Average']
         }))
-        .concat(
-          historicData.map(d => ({
-            ...d,
-            date: dayjs(d.date, 'YYYY-MM-DD').toDate()
-          }))
-        )
         .sort((a, b) => +a.date - +b.date)
     );
 </script>
@@ -119,9 +113,6 @@
     <Chart {region} {data} />
   {/await}
   <div class="notes">
-    <p>
-      Caveat info info info sources etc. Chamomile is known worldwide to be a calming sleep aid, a remedy to ease an
-      upset stomach, and for its wonderful .
-    </p>
+    <p>Source: Department of Health and Human Services, Victoria</p>
   </div>
 </div>

@@ -185,7 +185,7 @@
     </g>
 
     <path d={linePath(chartData)} stroke-dasharray="3 3 3 3 3 3 8 3 8 3 1000" />
-    <circle r="2" cx={xScale(last.date)} cy={yScale(last.value)} />
+    <circle r="3" cx={xScale(last.date)} cy={yScale(last.value)} />
     <line
       stroke="#000"
       x1={xScale(last.date)}
