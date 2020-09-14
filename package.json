@@ -1,38 +1,38 @@
 {
-  "name": "covid-victoria-roadmap",
-  "version": "1.0.0-pre",
-  "description": "A project generated from aunty's svelte project template.",
-  "license": "MIT",
-  "private": true,
-  "contributors": [
-    "Simon Elvery <simon@elvery.net>"
-  ],
-  "aunty": {
-    "type": "svelte"
-  },
-  "scripts": {
-    "start": "aunty serve",
-    "test": "aunty test"
-  },
-  "abc": {
-    "css": {
-      "libraryDir": "./node_modules/@abcaustralia/nucleus/css",
-      "logVariables": "false"
-    }
-  },
-  "devDependencies": {
-    "@abcnews/aunty": "^11.1.1",
-    "@testing-library/svelte": "^3.0.0",
-    "@types/d3": "^5.7.2",
-    "@types/jest": "^26.0.13",
-    "@types/webpack-env": "^1.15.2"
-  },
-  "dependencies": {
-    "d3-array": "^2.7.1",
-    "d3-dsv": "^2.0.0",
-    "d3-scale": "^3.2.2",
-    "d3-shape": "^2.0.0",
-    "dayjs": "^1.8.35",
-    "svelte": "^3.24.1"
-  }
+	"name": "covid-victoria-roadmap",
+	"version": "1.0.0",
+	"description": "A project generated from aunty's svelte project template.",
+	"license": "MIT",
+	"private": true,
+	"contributors": [
+		"Simon Elvery <simon@elvery.net>"
+	],
+	"aunty": {
+		"type": "svelte"
+	},
+	"scripts": {
+		"start": "aunty serve",
+		"test": "aunty test"
+	},
+	"abc": {
+		"css": {
+			"libraryDir": "./node_modules/@abcaustralia/nucleus/css",
+			"logVariables": "false"
+		}
+	},
+	"devDependencies": {
+		"@abcnews/aunty": "^11.1.1",
+		"@testing-library/svelte": "^3.0.0",
+		"@types/d3": "^5.7.2",
+		"@types/jest": "^26.0.13",
+		"@types/webpack-env": "^1.15.2"
+	},
+	"dependencies": {
+		"d3-array": "^2.7.1",
+		"d3-dsv": "^2.0.0",
+		"d3-scale": "^3.2.2",
+		"d3-shape": "^2.0.0",
+		"dayjs": "^1.8.35",
+		"svelte": "^3.24.1"
+	}
 }
