@@ -1,3 +1,4 @@
+import 'regenerator-runtime/runtime.js';
 import App from './components/App/App.svelte';
 import './fonts.scss';
 

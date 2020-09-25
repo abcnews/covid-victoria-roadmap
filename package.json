@@ -33,6 +33,7 @@
 		"d3-scale": "^3.2.2",
 		"d3-shape": "^2.0.0",
 		"dayjs": "^1.8.35",
+		"regenerator-runtime": "^0.13.7",
 		"svelte": "^3.24.1"
 	}
 }

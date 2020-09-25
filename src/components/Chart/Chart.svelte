@@ -37,7 +37,7 @@
   $: now = dayjs(last.date);
 
   // x-axis
-  $: xDomain = [now.subtract(20, 'day').toDate(), new Date(2020, 9, 30)];
+  $: xDomain = [now.subtract(20, 'day').toDate(), region === 'metro' ? new Date(2020, 9, 30) : new Date(2020, 10, 30)];
   $: xRange = [margin.left, width - margin.right];
   $: xTicks = [
     { value: now.subtract(20, 'day').toDate(), label: '20 days' },
@@ -54,6 +54,10 @@
   $: linePath = line<{ date: Date; value: number }>()
     .x(d => xScale(d.date))
     .y(d => yScale(d.value));
+
+  $: visibleMilestones = milestones[region].filter(
+    (d: Milestone) => typeof d.date === 'undefined' || d.date.getTime() < xDomain[1].getTime()
+  );
 </script>
 
 <style lang="scss">
@@ -193,7 +197,7 @@
       y1={yScale(last.value * 1.8)}
       y2={yScale(0) + 5} />
 
-    {#each milestones[region] as milestone}
+    {#each visibleMilestones as milestone}
       {#if milestone.date}
         <line
           x1={xScale(milestone.date)}
@@ -223,7 +227,7 @@
           x={xScale(milestone.date)}
           text-anchor="middle">
           <tspan class="value" x={xScale(milestone.date)}>{niceDate(milestone.date)}</tspan>
-          <tspan x={xScale(milestone.date)} dy="1.1em">&lt; {milestone.value} cases</tspan>
+          <tspan x={xScale(milestone.date)} dy="1.1em">{milestone.value > 0 ? '< ' : ''}{milestone.value} cases</tspan>
           <tspan x={xScale(milestone.date)} dy="1.1em">per day</tspan>
         </text>
       {:else}
