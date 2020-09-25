@@ -1,10 +1,21 @@
 <script lang="ts">
   import { csvParse } from 'd3-dsv';
   import { RawVictora14DayRow } from '../../global.d';
-  import { historicData } from '../../constants';
   import Chart from '../Chart/Chart.svelte';
   import { promiseSpy, toDate } from '../../utils';
   import dayjs from 'dayjs';
+
+  let now: number;
+  try {
+    const dateqs = new URLSearchParams(location.search).get('date');
+    if (dateqs) {
+      now = +dayjs(dateqs, 'YYYY-MM-DD');
+    } else {
+      throw new Error();
+    }
+  } catch (e) {
+    now = Date.now();
+  }
 
   let height: number = 300;
 
@@ -96,7 +107,7 @@
   </div>
 
   {#if region === 'metro'}
-    {#if Date.now() < new Date(2020, 8, 28).getTime()}
+    {#if now < new Date(2020, 8, 28).getTime()}
       <p>
         The next step on <strong>Melbourne's</strong> roadmap to easing restrictions will happen <strong>after September
           28</strong>, if the 14-day average is <strong>between 30 and 50</strong>.
