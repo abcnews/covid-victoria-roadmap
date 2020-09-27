@@ -37,7 +37,7 @@
   $: now = dayjs(last.date);
 
   // x-axis
-  $: xDomain = [now.subtract(20, 'day').toDate(), region === 'metro' ? new Date(2020, 9, 30) : new Date(2020, 10, 30)];
+  $: xDomain = [now.subtract(20, 'day').toDate(), new Date(2020, 9, 20)];
   $: xRange = [margin.left, width - margin.right];
   $: xTicks = [
     { value: now.subtract(20, 'day').toDate(), label: '20 days' },
