@@ -109,20 +109,20 @@
   {#if region === 'metro'}
     {#if now < new Date(2020, 8, 28).getTime()}
       <p>
-        The next step on <strong>Melbourne's</strong> roadmap to easing restrictions will happen <strong>after September
-          28</strong>, if the 14-day average is <strong>between 30 and 50</strong>.
+        The next step on <strong>Melbourne's</strong> roadmap to easing restrictions will take effect from <strong>11:59pm
+          on September 27</strong>.
       </p>
     {:else}
       <p>
-        The next step on <strong>Melbourne's</strong> roadmap to easing restrictions can happen <strong>after October 26</strong>,
+        The next step on <strong>Melbourne's</strong> roadmap to easing restrictions can happen <strong>after October 19</strong>,
         if the 14-day state-wide average is <strong>less than five</strong> and there are fewer than <strong>5 cases
           from unknown sources</strong> in the past 14 days.
       </p>
     {/if}
   {:else}
     <p>
-      The next step on <strong>regional Victoria's</strong> roadmap to easing restrictions will happen <strong>after 23
-        November</strong> if there have been <strong>no new cases for 14 days</strong>, across Victoria.
+      The next step on <strong>regional Victoria's</strong> roadmap to easing restrictions can happen when there have been
+      <strong>no new cases for 14 days</strong>, across Victoria.
     </p>
   {/if}
 

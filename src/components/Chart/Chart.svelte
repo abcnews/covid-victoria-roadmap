@@ -194,7 +194,7 @@
       stroke="#000"
       x1={xScale(last.date)}
       x2={xScale(last.date)}
-      y1={yScale(last.value * 1.8)}
+      y1={yScale(last.value * 2.1)}
       y2={yScale(0) + 5} />
 
     {#each visibleMilestones as milestone}
@@ -250,7 +250,7 @@
     {/each}
   </svg>
   <span class="label peak-label">Peak was {niceDate(peak.date)} at {peak.value.toFixed(1)} new cases</span>
-  <span class="now-label" style={`top: ${yScale(last.value * 1.8) - 10}px; left: ${xScale(last.date)}px`}>
+  <span class="now-label" style={`top: ${yScale(last.value * 2.1) - 10}px; left: ${xScale(last.date)}px`}>
     <strong>Latest:</strong>
     <strong>{last.value.toFixed(1)}</strong> new cases avg. over 14 days
   </span>

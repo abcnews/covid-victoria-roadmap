@@ -19,7 +19,7 @@ export const milestones: Milestones = {
       targetColour: '#248BC9'
     },
     {
-      date: new Date(2020, 9, 26),
+      date: new Date(2020, 9, 19),
       value: 5,
       colour: '#BD3C00',
       targetColour: '#FF6100'
@@ -32,10 +32,6 @@ export const milestones: Milestones = {
   regional: [
     {
       value: 5
-    },
-    {
-      date: new Date(2020, 10, 23),
-      value: 0
     }
   ]
 };
