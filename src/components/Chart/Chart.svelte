@@ -3,7 +3,7 @@
   import { max, maxIndex } from 'd3-array';
   import { scaleLinear, scaleUtc } from 'd3-scale';
   import { niceDate } from '../../utils';
-  import { milestones, Milestone } from '../../constants';
+  import { ONE_DAY_MS, milestones, Milestone } from '../../constants';
   import { Region, DataRow, Victoria14DayRow } from '../../global.d';
   import dayjs from 'dayjs';
 
@@ -36,13 +36,23 @@
   $: last = chartSeries && chartSeries[chartSeries.length - 1];
   $: now = dayjs(last.date);
 
+  $: visibleMilestones = milestones[region].filter(
+    (d: Milestone) => typeof d.date === 'undefined' || d.date.getTime() < xDomain[1].getTime()
+  );
+
   // x-axis
   $: xDomain = [now.subtract(20, 'day').toDate(), new Date(2020, 9, 20)];
   $: xRange = [margin.left, width - margin.right];
   $: xTicks = [
     { value: now.subtract(20, 'day').toDate(), label: '20 days' },
     { value: now.subtract(7, 'day').toDate(), label: '7 days' }
-  ];
+  ].filter(
+    /* only show ticks which aren't likely to overlap visible milestones (within 5 days) */
+    tick =>
+      visibleMilestones.filter(
+        (d: Milestone) => typeof d.date !== 'undefined' && Math.abs(+d.date - +tick.value) < ONE_DAY_MS * 5
+      ).length === 0
+  );
   $: xScale = scaleUtc().domain(xDomain).range(xRange);
 
   // y-axis
@@ -54,10 +64,6 @@
   $: linePath = line<{ date: Date; value: number }>()
     .x(d => xScale(d.date))
     .y(d => yScale(d.value));
-
-  $: visibleMilestones = milestones[region].filter(
-    (d: Milestone) => typeof d.date === 'undefined' || d.date.getTime() < xDomain[1].getTime()
-  );
 </script>
 
 <style lang="scss">
@@ -252,7 +258,8 @@
   <span class="label peak-label">Peak was {niceDate(peak.date)} at {peak.value.toFixed(1)} new cases</span>
   <span class="now-label" style={`top: ${yScale(last.value * 2.1) - 10}px; left: ${xScale(last.date)}px`}>
     <strong>Latest:</strong>
-    <strong>{last.value.toFixed(1)}</strong> new cases avg. over 14 days
+    <strong>{last.value.toFixed(1)}</strong>
+    new cases avg. over 14 days
   </span>
   <span class="updated">Last updated: <strong>{niceDate(last.date, true)}</strong></span>
 </div>
