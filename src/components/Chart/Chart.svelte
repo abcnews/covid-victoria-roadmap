@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { line } from 'd3-shape';
   import { max, maxIndex } from 'd3-array';
   import { scaleLinear, scaleUtc } from 'd3-scale';
-  import { niceDate } from '../../utils';
-  import { ONE_DAY_MS, milestones, Milestone } from '../../constants';
-  import { Region, DataRow, Victoria14DayRow } from '../../global.d';
+  import { line } from 'd3-shape';
   import dayjs from 'dayjs';
+  import type { Milestone } from '../../constants';
+  import { ONE_DAY_MS, milestones } from '../../constants';
+  import type { Region, DataRow, Victoria14DayRow } from '../../global.d';
+  import { niceDate } from '../../utils';
 
   export let data: Victoria14DayRow[] = [];
   export let region: Region = 'metro';
@@ -36,6 +37,7 @@
   $: last = chartSeries && chartSeries[chartSeries.length - 1];
   $: now = dayjs(last.date);
 
+  let visibleMilestones: Milestone[];
   $: visibleMilestones = milestones[region].filter(
     (d: Milestone) => typeof d.date === 'undefined' || d.date.getTime() < xDomain[1].getTime()
   );
@@ -194,7 +196,7 @@
       {/each}
     </g>
 
-    <path d={linePath(chartData)} stroke-dasharray="3 3 3 3 3 3 8 3 8 3 1000" />
+    <path d={linePath(chartData) || undefined} stroke-dasharray="3 3 3 3 3 3 8 3 8 3 1000" />
     <circle r="3" cx={xScale(last.date)} cy={yScale(last.value)} />
     <line
       stroke="#000"

@@ -10,7 +10,7 @@ export type Milestones = {
   regional: Milestone[];
 };
 
-export const ONE_DAY_MS = 1000 * 60 * 60 * 24;
+export const ONE_DAY_MS: number = 1000 * 60 * 60 * 24;
 
 export const milestones: Milestones = {
   metro: [

@@ -1,9 +1,10 @@
 <script lang="ts">
+  import type { DSVParsedArray } from 'd3-dsv';
   import { csvParse } from 'd3-dsv';
-  import { RawVictora14DayRow } from '../../global.d';
-  import Chart from '../Chart/Chart.svelte';
-  import { promiseSpy, toDate } from '../../utils';
   import dayjs from 'dayjs';
+  import type { RawVictora14DayRow } from '../../global.d';
+  import { toDate } from '../../utils';
+  import Chart from '../Chart/Chart.svelte';
 
   let now: number;
   try {
@@ -27,7 +28,7 @@
 
   const dataPromise = fetch(DATA_URL)
     .then(res => res.text())
-    .then(txt => csvParse<RawVictora14DayRow>(txt, null))
+    .then(txt => csvParse(txt) as DSVParsedArray<RawVictora14DayRow>)
     .then(data =>
       data
         .map(d => ({
@@ -109,19 +110,28 @@
   {#if region === 'metro'}
     {#if now < new Date(2020, 8, 28).getTime()}
       <p>
-        The next step on <strong>Melbourne's</strong> roadmap to easing restrictions will take effect from <strong>11:59pm
-          on September 27</strong>.
+        The next step on
+        <strong>Melbourne's</strong>
+        roadmap to easing restrictions will take effect from
+        <strong>11:59pm on September 27</strong>.
       </p>
     {:else}
       <p>
-        The next step on <strong>Melbourne's</strong> roadmap to easing restrictions can happen <strong>after October 19</strong>,
-        if the 14-day state-wide average is <strong>less than five</strong> and there are fewer than <strong>5 cases
-          from unknown sources</strong> in the past 14 days.
+        The next step on
+        <strong>Melbourne's</strong>
+        roadmap to easing restrictions can happen
+        <strong>after October 19</strong>, if the 14-day state-wide average is
+        <strong>less than five</strong>
+        and there are fewer than
+        <strong>5 cases from unknown sources</strong>
+        in the past 14 days.
       </p>
     {/if}
   {:else}
     <p>
-      The next step on <strong>regional Victoria's</strong> roadmap to easing restrictions can happen when there have been
+      The next step on
+      <strong>regional Victoria's</strong>
+      roadmap to easing restrictions can happen when there have been
       <strong>no new cases for 14 days</strong>, across Victoria.
     </p>
   {/if}
