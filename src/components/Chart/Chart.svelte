@@ -37,11 +37,6 @@
   $: last = chartSeries && chartSeries[chartSeries.length - 1];
   $: now = dayjs(last.date);
 
-  let visibleMilestones: Milestone[];
-  $: visibleMilestones = milestones[region].filter(
-    (d: Milestone) => typeof d.date === 'undefined' || d.date.getTime() < xDomain[1].getTime()
-  );
-
   // x-axis
   $: xDomain = [now.subtract(20, 'day').toDate(), new Date(2020, 9, 20)];
   $: xRange = [margin.left, width - margin.right];
@@ -49,9 +44,9 @@
     { value: now.subtract(20, 'day').toDate(), label: '20 days' },
     { value: now.subtract(7, 'day').toDate(), label: '7 days' }
   ].filter(
-    /* only show ticks which aren't likely to overlap visible milestones (within 5 days) */
+    /* only show ticks which aren't likely to overlap milestones (within 5 days) */
     tick =>
-      visibleMilestones.filter(
+      milestones[region].filter(
         (d: Milestone) => typeof d.date !== 'undefined' && Math.abs(+d.date - +tick.value) < ONE_DAY_MS * 5
       ).length === 0
   );
@@ -66,6 +61,11 @@
   $: linePath = line<{ date: Date; value: number }>()
     .x(d => xScale(d.date))
     .y(d => yScale(d.value));
+
+  let visibleMilestones: Milestone[];
+  $: visibleMilestones = milestones[region].filter((d: Milestone) =>
+    typeof d.date !== 'undefined' ? d.date.getTime() < xDomain[1].getTime() : yScale(d.value) < margin.top
+  );
 </script>
 
 <style lang="scss">
