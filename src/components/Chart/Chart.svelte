@@ -3,7 +3,7 @@
   import { max, maxIndex } from 'd3-array';
   import { scaleLinear, scaleUtc } from 'd3-scale';
   import { niceDate } from '../../utils';
-  import { milestones, Milestone } from '../../constants';
+  import { milestones, Milestone, Milestones } from '../../constants';
   import { Region, DataRow, Victoria14DayRow } from '../../global.d';
   import dayjs from 'dayjs';
 
@@ -66,6 +66,7 @@
     .x(d => xScale(d.date))
     .y(d => yScale(d.unknown));
 
+  let visibleMilestones: Milestone[];
   $: visibleMilestones = milestones[region].filter(
     (d: Milestone) =>
       typeof d.date === 'undefined' ||
@@ -86,9 +87,7 @@
     fill: none;
     stroke-width: 2px;
     stroke-linecap: round;
-    &.region {
-      stroke: #bbb;
-    }
+
     &.unknown {
       stroke: #000;
     }
@@ -193,10 +192,6 @@
     right: 0;
     color: #57676b;
     font-size: 0.6875rem;
-    strong {
-      font-weight: bold;
-      display: block;
-    }
   }
 
   .x-tick-label.milestone {
@@ -243,10 +238,14 @@
       stroke="#ccc" />
     <circle r="3" cx={xScale(last.date)} cy={yScale(last.region)} /> -->
 
-    <path pathLength={100} class="state" d={statePath(chartData)} stroke-dasharray="1 1 1 1 3 1 3 1 88" />
+    <path pathLength={100} class="state" d={statePath(chartData) || undefined} stroke-dasharray="1 1 1 1 3 1 3 1 88" />
     <circle r="3" cx={xScale(last.date)} cy={yScale(last.state)} />
 
-    <path pathLength={100} class="unknown" d={unknownsPath(chartData)} stroke-dasharray="1 1 1 1 3 1 3 1 88" />
+    <path
+      pathLength={100}
+      class="unknown"
+      d={unknownsPath(chartData) || undefined}
+      stroke-dasharray="1 1 1 1 3 1 3 1 88" />
     <circle r="3" cx={xScale(last.date)} cy={yScale(last.unknown)} />
 
     <line
@@ -317,6 +316,6 @@
   </span>
   <span style={`top: ${yScale(last.state)}px; left: ${xScale(last.date)}px`} class="avg-label">
     <span><strong class="number">{last.state.toFixed(1)}</strong> state-wide</span>
-    <span>14-day avgerage</span>
+    <span>14-day average</span>
   </span>
 </div>

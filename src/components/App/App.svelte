@@ -1,6 +1,6 @@
 <script lang="ts">
   import { csvParse } from 'd3-dsv';
-  import { RawVictora14DayRow, RawDailyCountCases } from '../../global.d';
+  import { RawVictora14DayRow, Victoria14DayRow, RawDailyCountCases } from '../../global.d';
   import Chart from '../Chart/Chart.svelte';
   import { ma, promiseSpy, toDate } from '../../utils';
   import dayjs from 'dayjs';
@@ -28,6 +28,8 @@
 
   const dataAverages = fetch(DATA_URL)
     .then(res => res.text())
+    // The 'null' argument here is to trick Typescript into letting us specify a type for the parsed data
+    // The d3 typescript definitions are wrong, I think.
     .then(txt => csvParse<RawVictora14DayRow>(txt, null))
     .then(data =>
       data
@@ -63,7 +65,13 @@
     );
 
   const dataPromise = Promise.all([dataAverages, dataStateWide]).then(([regions, stateWide]) => {
-    const data = regions.map(d => ({ ...d, state: stateWide.find(s => +s.date === +d.date)?.average || null }));
+    const data: Victoria14DayRow[] = [];
+    regions.forEach(d => {
+      const stateWideMatch = stateWide.find(s => +s.date === +d.date);
+      if (stateWideMatch) {
+        data.push({ ...d, state: stateWideMatch.average });
+      }
+    });
 
     return data;
   });
@@ -143,7 +151,7 @@
       roadmap can happen when the 14-day state-wide average is
       <strong>less than five</strong>
       and there are fewer than
-      <strong>5 cases from unknown sources</strong>
+      <strong>five cases from unknown sources</strong>
       in the past 14 days.
     </p>
   {:else}
