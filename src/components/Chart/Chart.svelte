@@ -23,40 +23,53 @@
     bottom: 60,
     top: 10,
     left: 25,
-    right: 15
+    right: 85
   };
 
   $: chartSeries = data.map(d => ({
     date: dayjs(d.date).toDate(),
-    value: d[region]
+    region: d[region],
+    state: d.state,
+    unknown: d.regionalUnknown + d.metroUnknown
   }));
 
-  $: chartData = chartSeries.slice(-25);
-  $: peak = chartSeries && chartSeries[maxIndex<DataRow>(chartSeries, d => d.value)];
+  $: chartData = chartSeries.slice(-21);
+  $: peak = chartSeries && chartSeries[maxIndex<DataRow>(chartSeries, d => d.state)];
   $: last = chartSeries && chartSeries[chartSeries.length - 1];
   $: now = dayjs(last.date);
 
   // x-axis
-  $: xDomain = [now.subtract(20, 'day').toDate(), new Date(2020, 9, 20)];
+  $: xDomain = [now.subtract(20, 'day').toDate(), now.add(1, 'day').toDate()];
   $: xRange = [margin.left, width - margin.right];
   $: xTicks = [
-    { value: now.subtract(20, 'day').toDate(), label: '20 days' },
-    { value: now.subtract(7, 'day').toDate(), label: '7 days' }
+    { value: now.subtract(20, 'day').toDate(), label: '20 days', ago: true },
+    { value: now.subtract(7, 'day').toDate(), label: '7 days', ago: true },
+    { value: now.toDate(), label: niceDate(last.date, true), ago: false }
   ];
   $: xScale = scaleUtc().domain(xDomain).range(xRange);
 
   // y-axis
-  $: yDomain = [0, (max<DataRow, number>(chartData || [], d => d.value) || 0) * 1.25];
+  $: yDomain = [0, Math.max(2, max<DataRow, number>(chartData || [], d => d.unknown) || 0) * 1.25];
   $: yRange = [height - margin.bottom, margin.top];
   $: yTicks = [0, 100, 200];
   $: yScale = scaleLinear().domain(yDomain).range(yRange);
 
-  $: linePath = line<{ date: Date; value: number }>()
+  $: regionPath = line<{ date: Date; region: number }>()
     .x(d => xScale(d.date))
-    .y(d => yScale(d.value));
+    .y(d => yScale(d.region));
+
+  $: statePath = line<{ date: Date; state: number }>()
+    .x(d => xScale(d.date))
+    .y(d => yScale(d.state));
+
+  $: unknownsPath = line<{ date: Date; unknown: number }>()
+    .x(d => xScale(d.date))
+    .y(d => yScale(d.unknown));
 
   $: visibleMilestones = milestones[region].filter(
-    (d: Milestone) => typeof d.date === 'undefined' || d.date.getTime() < xDomain[1].getTime()
+    (d: Milestone) =>
+      typeof d.date === 'undefined' ||
+      (d.date.getTime() < xDomain[1].getTime() && d.date.getTime() > xDomain[0].getTime())
   );
 </script>
 
@@ -71,9 +84,18 @@
   }
   path {
     fill: none;
-    stroke: #000;
     stroke-width: 2px;
     stroke-linecap: round;
+    &.region {
+      stroke: #bbb;
+    }
+    &.unknown {
+      stroke: #000;
+    }
+
+    &.state {
+      stroke: #999;
+    }
   }
 
   .label {
@@ -83,10 +105,10 @@
   .now-label {
     color: #57676b;
     position: absolute;
-    display: block;
-    max-width: 8em;
+    display: flex;
+    box-sizing: border-box;
     text-align: center;
-    transform: translate(-50%, -100%);
+    transform: translate(-1.5em, -100%);
     font-size: 0.75rem;
     font-weight: bold;
     > strong {
@@ -96,11 +118,34 @@
       text-transform: uppercase;
       font-weight: bold;
     }
-    :nth-child(2) {
-      font-size: 3em;
+    .number {
+      font-size: 2.125rem;
       display: block;
       margin-bottom: 0.1em;
       font-weight: 800;
+    }
+    .label {
+      box-sizing: border-box;
+      width: 8em;
+      text-align: left;
+      padding-left: 5px;
+      margin-top: -2px;
+    }
+  }
+
+  .avg-label {
+    position: absolute;
+    font-size: 0.6875rem;
+    color: #57676b;
+    font-weight: bold;
+    transform: translate(10px, -0.55rem);
+    line-height: 1.1;
+    span {
+      display: block;
+    }
+    strong {
+      font-size: 1rem;
+      color: #000;
     }
   }
 
@@ -137,14 +182,14 @@
     position: absolute;
     font-weight: bold;
     display: block;
-    max-width: 10em;
+    max-width: 12em;
     top: 0;
     left: 0;
   }
 
   .updated {
     position: absolute;
-    top: 0;
+    bottom: calc(60px - 1.1 * 2rem);
     right: 0;
     color: #57676b;
     font-size: 0.6875rem;
@@ -182,20 +227,34 @@
           <line y1={yScale(0) + 5} y2={yScale(0)} x1={xScale(tick.value)} x2={xScale(tick.value)} />
           <text y={yScale(0) + 20} x={xScale(tick.value)} text-anchor="middle">
             <tspan x={xScale(tick.value)}>{tick.label}</tspan>
-            <tspan x={xScale(tick.value)} dy="1.1em">ago</tspan>
+            {#if tick.ago}
+              <tspan x={xScale(tick.value)} dy="1.1em">ago</tspan>
+            {/if}
           </text>
         </g>
       {/each}
     </g>
 
-    <path d={linePath(chartData)} stroke-dasharray="3 3 3 3 3 3 8 3 8 3 1000" />
-    <circle r="3" cx={xScale(last.date)} cy={yScale(last.value)} />
+    <!-- <path
+      pathLength={100}
+      class="region"
+      d={regionPath(chartData)}
+      stroke-dasharray="1 1 1 1 3 1 3 1 88"
+      stroke="#ccc" />
+    <circle r="3" cx={xScale(last.date)} cy={yScale(last.region)} /> -->
+
+    <path pathLength={100} class="state" d={statePath(chartData)} stroke-dasharray="1 1 1 1 3 1 3 1 88" />
+    <circle r="3" cx={xScale(last.date)} cy={yScale(last.state)} />
+
+    <path pathLength={100} class="unknown" d={unknownsPath(chartData)} stroke-dasharray="1 1 1 1 3 1 3 1 88" />
+    <circle r="3" cx={xScale(last.date)} cy={yScale(last.unknown)} />
+
     <line
       stroke="#000"
       x1={xScale(last.date)}
       x2={xScale(last.date)}
-      y1={yScale(last.value * 2.1)}
-      y2={yScale(0) + 5} />
+      y1={yScale(last.unknown) - 35}
+      y2={yScale(last.unknown) - 10} />
 
     {#each visibleMilestones as milestone}
       {#if milestone.date}
@@ -232,7 +291,7 @@
         </text>
       {:else}
         <line
-          x1={xScale(xDomain[1])}
+          x1={xScale(last.date)}
           x2={xScale(xDomain[0])}
           y1={yScale(milestone.value)}
           y2={yScale(milestone.value)}
@@ -249,10 +308,15 @@
       </text>
     {/each}
   </svg>
-  <span class="label peak-label">Peak was {niceDate(peak.date)} at {peak.value.toFixed(1)} new cases</span>
-  <span class="now-label" style={`top: ${yScale(last.value * 2.1) - 10}px; left: ${xScale(last.date)}px`}>
-    <strong>Latest:</strong>
-    <strong>{last.value.toFixed(1)}</strong> new cases avg. over 14 days
+  <span class="label peak-label">Peak state-wide average was {peak.state.toFixed(1)} on {niceDate(peak.date)}</span>
+  <span
+    class="now-label"
+    style={`top: ${yScale(Math.max(last.unknown, last.state)) - 35}px; left: ${xScale(last.date)}px`}>
+    <strong class="number">{last.unknown.toFixed(0)}</strong>
+    <span class="label">mystery cases in past 14 days</span>
   </span>
-  <span class="updated">Last updated: <strong>{niceDate(last.date, true)}</strong></span>
+  <span style={`top: ${yScale(last.state)}px; left: ${xScale(last.date)}px`} class="avg-label">
+    <span><strong class="number">{last.state.toFixed(1)}</strong> state-wide</span>
+    <span>14-day avgerage</span>
+  </span>
 </div>

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { csvParse } from 'd3-dsv';
-  import { RawVictora14DayRow } from '../../global.d';
+  import { RawVictora14DayRow, RawDailyCountCases } from '../../global.d';
   import Chart from '../Chart/Chart.svelte';
-  import { promiseSpy, toDate } from '../../utils';
+  import { ma, promiseSpy, toDate } from '../../utils';
   import dayjs from 'dayjs';
 
   let now: number;
@@ -22,10 +22,11 @@
   $: setTimeout(() => window.parent.postMessage({ sentinel: 'amp', type: 'embed-size', height }, '*'), 0);
   let region: 'metro' | 'regional' = 'metro';
 
-  const DATA_URL =
-    'https://covid-sheets-mirror.web.app/api?sheet=1nUUU5zPRPlhAXM_-8R7lsMnAkK4jaebvIL5agAaKoXk&range=Vic%2014%20day%20average!A:C';
+  const SHEET = 'https://covid-sheets-mirror.web.app/api?sheet=1nUUU5zPRPlhAXM_-8R7lsMnAkK4jaebvIL5agAaKoXk';
+  const DATA_URL = SHEET + '&range=Vic%2014%20day%20average!A:E';
+  const DATA_URL_STATE_WIDE = SHEET + '&range=Daily%20Count%20States!A:D';
 
-  const dataPromise = fetch(DATA_URL)
+  const dataAverages = fetch(DATA_URL)
     .then(res => res.text())
     .then(txt => csvParse<RawVictora14DayRow>(txt, null))
     .then(data =>
@@ -33,10 +34,39 @@
         .map(d => ({
           date: toDate(d.Date),
           regional: +d['Regional Average'],
-          metro: +d['Metro Average']
+          metro: +d['Metro Average'],
+          regionalUnknown: +d['Regional Unknown'],
+          metroUnknown: +d['Metro Unknown']
         }))
         .sort((a, b) => +a.date - +b.date)
     );
+
+  const dataStateWide = fetch(DATA_URL_STATE_WIDE)
+    .then(res => res.text())
+    .then(txt => csvParse<RawDailyCountCases>(txt, null))
+    .then(data => data.filter(d => d['New cases'] !== '' && d['State/territory'] === 'VIC'))
+    .then(data =>
+      data
+        .map(d => ({
+          date: toDate(d['Date announced']),
+          added: +d['New cases']
+        }))
+        .sort((a, b) => +a.date - +b.date)
+    )
+    .then(data =>
+      ma<{ date: Date; added: number }, { date: Date; average: number }>(
+        data,
+        14,
+        d => d.added,
+        (average, d) => ({ date: d.date, average })
+      )
+    );
+
+  const dataPromise = Promise.all([dataAverages, dataStateWide]).then(([regions, stateWide]) => {
+    const data = regions.map(d => ({ ...d, state: stateWide.find(s => +s.date === +d.date)?.average || null }));
+
+    return data;
+  });
 </script>
 
 <style lang="scss">
@@ -107,21 +137,21 @@
   </div>
 
   {#if region === 'metro'}
-    {#if now < new Date(2020, 8, 28).getTime()}
-      <p>
-        The next step on <strong>Melbourne's</strong> roadmap to easing restrictions will take effect from <strong>11:59pm
-          on September 27</strong>.
-      </p>
-    {:else}
-      <p>
-        The next step on <strong>Melbourne's</strong> roadmap to easing restrictions can happen <strong>after October 19</strong>,
-        if the 14-day state-wide average is <strong>less than five</strong> and there are fewer than <strong>5 cases
-          from unknown sources</strong> in the past 14 days.
-      </p>
-    {/if}
+    <p>
+      The next step on
+      <strong>Melbourne's</strong>
+      roadmap can happen when the 14-day state-wide average is
+      <strong>less than five</strong>
+      and there are fewer than
+      <strong>5 cases from unknown sources</strong>
+      in the past 14 days.
+    </p>
   {:else}
     <p>
-      The next step on <strong>regional Victoria's</strong> roadmap to easing restrictions can happen when there have been
+      <strong>Regional Victoria</strong>
+      can move to the
+      <strong>last step</strong>
+      on the roadmap when there have been
       <strong>no new cases for 14 days</strong>, across Victoria.
     </p>
   {/if}
@@ -132,6 +162,9 @@
     <Chart {region} {data} />
   {/await}
   <div class="notes">
-    <p>Source: Department of Health and Human Services, Victoria</p>
+    <p>
+      Source: Department of Health and Human Services, Victoria. Numbers are plotted against the date they are
+      announced. Date ranges for unknown cases and 14 day average differ slightly to allow for DHHS case analysis.
+    </p>
   </div>
 </div>

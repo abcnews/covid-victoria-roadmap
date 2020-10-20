@@ -13,7 +13,7 @@ export function ma<T, O>(
   );
 }
 
-export const promiseSpy = (d: unknown) => {
+export const promiseSpy = d => {
   console.log('d :>> ', d);
   return d;
 };
