@@ -2,7 +2,7 @@
   import { csvParse } from 'd3-dsv';
   import { RawVictora14DayRow, Victoria14DayRow, RawDailyCountCases } from '../../global.d';
   import Chart from '../Chart/Chart.svelte';
-  import { ma, promiseSpy, toDate } from '../../utils';
+  import { ma, toDate } from '../../utils';
   import dayjs from 'dayjs';
 
   let now: number;

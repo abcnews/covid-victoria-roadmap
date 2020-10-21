@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { line } from 'd3-shape';
   import { max, maxIndex } from 'd3-array';
   import { scaleLinear, scaleUtc } from 'd3-scale';
   import { niceDate } from '../../utils';
-  import { milestones, Milestone, Milestones } from '../../constants';
+  import { line } from 'd3-shape';
+  import { milestones, Milestone } from '../../constants';
   import { Region, DataRow, Victoria14DayRow } from '../../global.d';
   import dayjs from 'dayjs';
 

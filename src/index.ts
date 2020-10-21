@@ -9,10 +9,7 @@ const root = document.querySelector(ROOT_SELECTOR);
 
 if (root) {
   new App({
-    target: root,
-    props: {
-      projectName: PROJECT_NAME
-    }
+    target: root
   });
 }
 
