@@ -1,8 +1,8 @@
 <script lang="ts">
   import { max, maxIndex } from 'd3-array';
   import { scaleLinear, scaleUtc } from 'd3-scale';
-  import { niceDate } from '../../utils';
-  import { line } from 'd3-shape';
+  import { niceDate, scaleGuard } from '../../utils';
+  import { line as l } from 'd3-shape';
   import { milestones, Milestone } from '../../constants';
   import { Region, DataRow, Victoria14DayRow } from '../../global.d';
   import dayjs from 'dayjs';
@@ -46,23 +46,19 @@
     { value: now.subtract(7, 'day').toDate(), label: '7 days', ago: true },
     { value: now.toDate(), label: niceDate(last.date, true), ago: false }
   ];
-  $: xScale = scaleUtc().domain(xDomain).range(xRange);
+  $: xScale = scaleGuard(scaleUtc().domain(xDomain).range(xRange));
 
   // y-axis
   $: yDomain = [0, Math.max(2, max<DataRow, number>(chartData || [], d => d.unknown) || 0) * 1.25];
   $: yRange = [height - margin.bottom, margin.top];
   $: yTicks = [0, 100, 200];
-  $: yScale = scaleLinear().domain(yDomain).range(yRange);
+  $: yScale = scaleGuard(scaleLinear().domain(yDomain).range(yRange));
 
-  $: regionPath = line<{ date: Date; region: number }>()
-    .x(d => xScale(d.date))
-    .y(d => yScale(d.region));
-
-  $: statePath = line<{ date: Date; state: number }>()
+  $: statePath = l<{ date: Date; state: number }>()
     .x(d => xScale(d.date))
     .y(d => yScale(d.state));
 
-  $: unknownsPath = line<{ date: Date; unknown: number }>()
+  $: unknownsPath = l<{ date: Date; unknown: number }>()
     .x(d => xScale(d.date))
     .y(d => yScale(d.unknown));
 
@@ -238,22 +234,28 @@
       stroke="#ccc" />
     <circle r="3" cx={xScale(last.date)} cy={yScale(last.region)} /> -->
 
-    <path pathLength={100} class="state" d={statePath(chartData) || undefined} stroke-dasharray="1 1 1 1 3 1 3 1 88" />
-    <circle r="3" cx={xScale(last.date)} cy={yScale(last.state)} />
-
     <path
       pathLength={100}
-      class="unknown"
-      d={unknownsPath(chartData) || undefined}
+      class={region === 'metro' ? 'state' : 'unknown'}
+      d={statePath(chartData) || undefined}
       stroke-dasharray="1 1 1 1 3 1 3 1 88" />
-    <circle r="3" cx={xScale(last.date)} cy={yScale(last.unknown)} />
+    <circle r="3" cx={xScale(last.date)} cy={yScale(last.state)} />
+
+    {#if region === 'metro'}
+      <path
+        pathLength={100}
+        class="unknown"
+        d={unknownsPath(chartData) || undefined}
+        stroke-dasharray="1 1 1 1 3 1 3 1 88" />
+      <circle r="3" cx={xScale(last.date)} cy={yScale(last.unknown)} />
+    {/if}
 
     <line
       stroke="#000"
       x1={xScale(last.date)}
       x2={xScale(last.date)}
-      y1={yScale(last.unknown) - 35}
-      y2={yScale(last.unknown) - 10} />
+      y1={yScale(region === 'metro' ? last.unknown : last.state) - 35}
+      y2={yScale(region === 'metro' ? last.unknown : last.state) - 10} />
 
     {#each visibleMilestones as milestone}
       {#if milestone.date}
@@ -308,14 +310,22 @@
     {/each}
   </svg>
   <span class="label peak-label">Peak state-wide average was {peak.state.toFixed(1)} on {niceDate(peak.date)}</span>
-  <span
-    class="now-label"
-    style={`top: ${yScale(Math.max(last.unknown, last.state)) - 35}px; left: ${xScale(last.date)}px`}>
-    <strong class="number">{last.unknown.toFixed(0)}</strong>
-    <span class="label">mystery cases in past 14 days</span>
-  </span>
-  <span style={`top: ${yScale(last.state)}px; left: ${xScale(last.date)}px`} class="avg-label">
-    <span><strong class="number">{last.state.toFixed(1)}</strong> state-wide</span>
-    <span>14-day average</span>
-  </span>
+  {#if region === 'metro'}
+    <span
+      class="now-label"
+      style={`top: ${yScale(Math.max(last.unknown, last.state)) - 35}px; left: ${xScale(last.date)}px`}>
+      <strong class="number">{last.unknown.toFixed(0)}</strong>
+      <span class="label">mystery cases in past 14 days</span>
+    </span>
+
+    <span style={`top: ${yScale(last.state)}px; left: ${xScale(last.date)}px`} class="avg-label">
+      <span><strong class="number">{last.state.toFixed(1)}</strong> state-wide</span>
+      <span>14-day average</span>
+    </span>
+  {:else}
+    <span class="now-label" style={`top: ${yScale(last.state) - 35}px; left: ${xScale(last.date)}px`}>
+      <strong class="number">{last.state.toFixed(1)}</strong>
+      <span class="label">state-wide<br /> 14-day average</span>
+    </span>
+  {/if}
 </div>

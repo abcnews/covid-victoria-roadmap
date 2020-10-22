@@ -61,3 +61,9 @@ export const niceDate = (d: Date, long: boolean = false): string => {
 export const subtractDays = (d: Date, days: number) => {
   const res = new Date(d);
 };
+
+export const scaleGuard = scale => (d: number | Date) => {
+  const r = scale(d);
+  if (typeof r === 'undefined') throw Error();
+  return r;
+};
