@@ -26,7 +26,7 @@
   const DATA_URL = SHEET + '&range=Vic%2014%20day%20average!A:E';
   const DATA_URL_STATE_WIDE = SHEET + '&range=Daily%20Count%20States!A:D';
 
-  const dataAverages = fetch(DATA_URL)
+  const dataPromise = fetch(DATA_URL)
     .then(res => res.text())
     // The 'null' argument here is to trick Typescript into letting us specify a type for the parsed data
     // The d3 typescript definitions are wrong, I think.
@@ -37,44 +37,12 @@
           date: toDate(d.Date),
           regional: +d['Regional Average'],
           metro: +d['Metro Average'],
+          state: (+d['Metro Average'] * 14 + +d['Regional Average'] * 14) / 14,
           regionalUnknown: +d['Regional Unknown'],
           metroUnknown: +d['Metro Unknown']
         }))
         .sort((a, b) => +a.date - +b.date)
     );
-
-  const dataStateWide = fetch(DATA_URL_STATE_WIDE)
-    .then(res => res.text())
-    .then(txt => csvParse<RawDailyCountCases>(txt, null))
-    .then(data => data.filter(d => d['New cases'] !== '' && d['State/territory'] === 'VIC'))
-    .then(data =>
-      data
-        .map(d => ({
-          date: toDate(d['Date announced']),
-          added: +d['New cases']
-        }))
-        .sort((a, b) => +a.date - +b.date)
-    )
-    .then(data =>
-      ma<{ date: Date; added: number }, { date: Date; average: number }>(
-        data,
-        14,
-        d => d.added,
-        (average, d) => ({ date: d.date, average })
-      )
-    );
-
-  const dataPromise = Promise.all([dataAverages, dataStateWide]).then(([regions, stateWide]) => {
-    const data: Victoria14DayRow[] = [];
-    regions.forEach(d => {
-      const stateWideMatch = stateWide.find(s => +s.date === +d.date);
-      if (stateWideMatch) {
-        data.push({ ...d, state: stateWideMatch.average });
-      }
-    });
-
-    return data;
-  });
 </script>
 
 <style lang="scss">
@@ -139,40 +107,26 @@
 
 <div class="container" bind:clientHeight={height}>
   <h2 class="title">How is Victoria tracking to get out of lockdown?</h2>
-  <div class="tabs">
-    <button class="tab {region === 'metro' ? 'active' : ''}" on:click={() => (region = 'metro')}>Vic. metro</button>
-    <button class="tab {region === 'regional' ? 'active' : ''}" on:click={() => (region = 'regional')}>Vic. regional</button>
-  </div>
 
-  {#if region === 'metro'}
-    <p>
-      The next step on
-      <strong>Melbourne's</strong>
-      roadmap can happen when the 14-day state-wide average is
-      <strong>less than five</strong>
-      and there are fewer than
-      <strong>five cases from unknown sources</strong>
-      in the past 14 days.
-    </p>
-  {:else}
-    <p>
-      <strong>Regional Victoria</strong>
-      can move to the
-      <strong>last step</strong>
-      on the roadmap when there have been
-      <strong>no new cases for 14 days</strong>, across Victoria.
-    </p>
-  {/if}
+  <p>
+    <strong>Melbourne</strong>
+    and
+    <strong>regional Victoria</strong>
+    can both move to the
+    <strong>last step</strong>
+    on the roadmap when there have been
+    <strong>no new cases for 14 days</strong>, across Victoria.
+  </p>
 
   {#await dataPromise}
     <p>Loading...</p>
   {:then data}
-    <Chart {region} {data} />
+    <Chart {data} />
   {/await}
   <div class="notes">
     <p>
       Source: Department of Health and Human Services, Victoria. Numbers are plotted against the date they are
-      announced. Date ranges for unknown cases and 14 day average differ slightly to allow for DHHS case analysis.
+      announced.
     </p>
   </div>
 </div>

@@ -8,7 +8,7 @@
   import dayjs from 'dayjs';
 
   export let data: Victoria14DayRow[] = [];
-  export let region: Region = 'metro';
+  let region: Region = 'regional';
 
   let chartSeries: DataRow[];
   let chartData: DataRow[];
@@ -310,22 +310,9 @@
     {/each}
   </svg>
   <span class="label peak-label">Peak state-wide average was {peak.state.toFixed(1)} on {niceDate(peak.date)}</span>
-  {#if region === 'metro'}
-    <span
-      class="now-label"
-      style={`top: ${yScale(Math.max(last.unknown, last.state)) - 35}px; left: ${xScale(last.date)}px`}>
-      <strong class="number">{last.unknown.toFixed(0)}</strong>
-      <span class="label">mystery cases in past 14 days</span>
-    </span>
 
-    <span style={`top: ${yScale(last.state)}px; left: ${xScale(last.date)}px`} class="avg-label">
-      <span><strong class="number">{last.state.toFixed(1)}</strong> state-wide</span>
-      <span>14-day average</span>
-    </span>
-  {:else}
-    <span class="now-label" style={`top: ${yScale(last.state) - 35}px; left: ${xScale(last.date)}px`}>
-      <strong class="number">{last.state.toFixed(1)}</strong>
-      <span class="label">state-wide<br /> 14-day average</span>
-    </span>
-  {/if}
+  <span class="now-label" style={`top: ${yScale(last.state) - 35}px; left: ${xScale(last.date)}px`}>
+    <strong class="number">{last.state.toFixed(1)}</strong>
+    <span class="label">state-wide<br /> 14-day average</span>
+  </span>
 </div>

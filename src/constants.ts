@@ -13,12 +13,6 @@ export type Milestones = {
 export const ONE_DAY_MS: number = 1000 * 60 * 60 * 24;
 
 export const milestones: Milestones = {
-  metro: [
-    {
-      value: 5,
-      colour: '#BD3C00',
-      targetColour: '#FF6100'
-    }
-  ],
+  metro: [],
   regional: []
 };
