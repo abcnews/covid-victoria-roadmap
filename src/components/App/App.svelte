@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { csvParse } from 'd3-dsv';
-  import { RawVictora14DayRow, Victoria14DayRow, RawDailyCountCases } from '../../global.d';
+  import { Victoria14DayRow } from '../../global.d';
   import Chart from '../Chart/Chart.svelte';
-  import { ma, toDate } from '../../utils';
+  import { toDate } from '../../utils';
   import dayjs from 'dayjs';
+  import rawData from '../../data.csv';
 
   let now: number;
   try {
@@ -22,27 +22,16 @@
   $: setTimeout(() => window.parent.postMessage({ sentinel: 'amp', type: 'embed-size', height }, '*'), 0);
   let region: 'metro' | 'regional' = 'metro';
 
-  const SHEET = 'https://covid-sheets-mirror.web.app/api?sheet=1nUUU5zPRPlhAXM_-8R7lsMnAkK4jaebvIL5agAaKoXk';
-  const DATA_URL = SHEET + '&range=Vic%2014%20day%20average!A:E';
-  const DATA_URL_STATE_WIDE = SHEET + '&range=Daily%20Count%20States!A:D';
-
-  const dataPromise = fetch(DATA_URL)
-    .then(res => res.text())
-    // The 'null' argument here is to trick Typescript into letting us specify a type for the parsed data
-    // The d3 typescript definitions are wrong, I think.
-    .then(txt => csvParse<RawVictora14DayRow>(txt, null))
-    .then(data =>
-      data
-        .map(d => ({
-          date: toDate(d.Date),
-          regional: +d['Regional Average'],
-          metro: +d['Metro Average'],
-          state: (+d['Metro Average'] * 14 + +d['Regional Average'] * 14) / 14,
-          regionalUnknown: +d['Regional Unknown'],
-          metroUnknown: +d['Metro Unknown']
-        }))
-        .sort((a, b) => +a.date - +b.date)
-    );
+  const data: Victoria14DayRow[] = rawData
+    .map(d => ({
+      date: toDate(d.Date),
+      regional: +d['Regional Average'],
+      metro: +d['Metro Average'],
+      state: (+d['Metro Average'] * 14 + +d['Regional Average'] * 14) / 14,
+      regionalUnknown: +d['Regional Unknown'],
+      metroUnknown: +d['Metro Unknown']
+    }))
+    .sort((a, b) => +a.date - +b.date);
 </script>
 
 <style lang="scss">
@@ -118,12 +107,10 @@
     <strong>no new cases for 14 days</strong>, across Victoria.
   </p>
 
-  {#await dataPromise}
-    <p>Loading...</p>
-  {:then data}
-    <Chart {data} />
-  {/await}
+  <Chart {data} />
+
   <div class="notes">
+    <p>This chart is no longer being updated.</p>
     <p>
       Source: Department of Health and Human Services, Victoria. Numbers are plotted against the date they are
       announced.
